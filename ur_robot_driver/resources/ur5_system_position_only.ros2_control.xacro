@@ -6,7 +6,7 @@
     <ros2_control name="${name}" type="system">
       <hardware>
         <plugin>ur_robot_driver/URPositionHardwareInterface</plugin>
-        <param name="robot_ip">192.168.0.10</param>
+        <param name="robot_ip">10.0.1.186</param>
         <param name="script_filename">/home/catkin_ws/src/Universal_Robots_ROS2_Driver/ur_robot_driver/resources/ros_control.urscript</param>
         <param name="output_recipe_filename">/home/catkin_ws/src/Universal_Robots_ROS2_Driver/ur_robot_driver/resources/rtde_output_recipe.txt</param>
         <param name="input_recipe_filename">/home/catkin_ws/src/Universal_Robots_ROS2_Driver/ur_robot_driver/resources/rtde_input_recipe.txt</param>
