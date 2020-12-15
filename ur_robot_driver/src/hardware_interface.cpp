@@ -288,6 +288,8 @@ return_type URPositionHardwareInterface::start()
 
   status_ = hardware_interface::status::STARTED;
 
+  ur_driver_->startRTDECommunication();
+
   RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "System successfully started!");
 
   return return_type::OK;
