@@ -385,7 +385,7 @@ return_type URPositionHardwareInterface::read()
 
 return_type URPositionHardwareInterface::write()
 {
-  if ((runtime_state_ == static_cast<uint32_t>(rtde::RUNTIME_STATE::PLAYING) ||
+  if (true || (runtime_state_ == static_cast<uint32_t>(rtde::RUNTIME_STATE::PLAYING) ||
        runtime_state_ == static_cast<uint32_t>(rtde::RUNTIME_STATE::PAUSING)) &&
       robot_program_running_ && (!non_blocking_read_ || packet_read_))
   {
@@ -395,7 +395,7 @@ return_type URPositionHardwareInterface::write()
     memcpy(&urcl_velocity_commands_[0], &velocity_commands_[0], 6 * sizeof(double));
 
     // create a lambda substract functor
-    std::function<double(double, double)> substractor = [](double a, double b) { return a - b; };
+    std::function<double(double, double)> substractor = [](double a, double b) { return std::abs(a - b); };
 
     // create a position difference vector
     std::vector<double> pos_diff;
@@ -416,6 +416,7 @@ return_type URPositionHardwareInterface::write()
 
     if (pos_diff_sum != 0.0)
     {
+      RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Position difference exists ...");
       ur_driver_->writeJointCommand(urcl_position_commands_, urcl::comm::ControlMode::MODE_SERVOJ);
     }
     else if (vel_diff_sum != 0.0)
