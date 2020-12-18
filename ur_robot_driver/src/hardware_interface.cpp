@@ -34,6 +34,12 @@
 
 namespace rtde = urcl::rtde_interface;
 
+using Clock = std::chrono::high_resolution_clock;
+using TimePoint = std::chrono::time_point<Clock>;
+
+TimePoint start_;
+TimePoint end_;
+
 namespace ur_robot_driver
 {
 hardware_interface::return_type URPositionHardwareInterface::configure(const HardwareInfo& system_info)
@@ -290,6 +296,29 @@ return_type URPositionHardwareInterface::start()
 
   ur_driver_->startRTDECommunication();
 
+  RCLCPP_INFO_STREAM(rclcpp::get_logger("URPositionHardwareInterface"), "FREQUENCY = "<<ur_driver_->getControlFrequency());
+
+
+  ur_driver_->getDataPackage();
+  bool enter = false;
+  uint cnt = 0;
+  while(ur_driver_->writeKeepalive()){
+    RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "WriteKeepAlive OK");
+    enter = true;
+    ++cnt;
+    if (cnt > 3){
+      RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Never entered!");
+      break;
+
+    }
+
+    ur_driver_->getDataPackage();
+
+
+  }
+  if(!enter)
+    RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Break!");
+
   RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "System successfully started!");
 
   return return_type::OK;
@@ -336,7 +365,7 @@ void URPositionHardwareInterface::readBitsetData(const std::unique_ptr<rtde::Dat
 
 return_type URPositionHardwareInterface::read()
 {
-  RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Reading ...");
+//  RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Reading ...");
 
   std::unique_ptr<rtde::DataPackage> data_pkg = ur_driver_->getDataPackage();
 
@@ -351,29 +380,29 @@ return_type URPositionHardwareInterface::read()
     memcpy(&velocity_states_[0], &urcl_joint_velocities_[0], 6 * sizeof(double));
     memcpy(&joint_efforts_[0], &urcl_joint_efforts_[0], 6 * sizeof(double));
 
-    readData(data_pkg, "target_speed_fraction", target_speed_fraction_);
-    readData(data_pkg, "speed_scaling", speed_scaling_);
-    readData(data_pkg, "runtime_state", runtime_state_);
-    readData(data_pkg, "actual_TCP_force", fts_measurements_);
-    readData(data_pkg, "actual_TCP_pose", tcp_pose_);
-    readData(data_pkg, "standard_analog_input0", standard_analog_input_[0]);
-    readData(data_pkg, "standard_analog_input1", standard_analog_input_[1]);
-    readData(data_pkg, "standard_analog_output0", standard_analog_output_[0]);
-    readData(data_pkg, "standard_analog_output1", standard_analog_output_[1]);
-    readData(data_pkg, "tool_mode", tool_mode_);
-    readData(data_pkg, "tool_analog_input0", tool_analog_input_[0]);
-    readData(data_pkg, "tool_analog_input1", tool_analog_input_[1]);
-    readData(data_pkg, "tool_output_voltage", tool_output_voltage_);
-    readData(data_pkg, "tool_output_current", tool_output_current_);
-    readData(data_pkg, "tool_temperature", tool_temperature_);
-    readData(data_pkg, "robot_mode", robot_mode_);
-    readData(data_pkg, "safety_mode", safety_mode_);
-    readBitsetData<uint32_t>(data_pkg, "robot_status_bits", robot_status_bits_);
-    readBitsetData<uint32_t>(data_pkg, "safety_status_bits", safety_status_bits_);
-    readBitsetData<uint64_t>(data_pkg, "actual_digital_input_bits", actual_dig_in_bits_);
-    readBitsetData<uint64_t>(data_pkg, "actual_digital_output_bits", actual_dig_out_bits_);
-    readBitsetData<uint32_t>(data_pkg, "analog_io_types", analog_io_types_);
-    readBitsetData<uint32_t>(data_pkg, "tool_analog_input_types", tool_analog_input_types_);
+//    readData(data_pkg, "target_speed_fraction", target_speed_fraction_);
+//    readData(data_pkg, "speed_scaling", speed_scaling_);
+//    readData(data_pkg, "runtime_state", runtime_state_);
+//    readData(data_pkg, "actual_TCP_force", fts_measurements_);
+//    readData(data_pkg, "actual_TCP_pose", tcp_pose_);
+//    readData(data_pkg, "standard_analog_input0", standard_analog_input_[0]);
+//    readData(data_pkg, "standard_analog_input1", standard_analog_input_[1]);
+//    readData(data_pkg, "standard_analog_output0", standard_analog_output_[0]);
+//    readData(data_pkg, "standard_analog_output1", standard_analog_output_[1]);
+//    readData(data_pkg, "tool_mode", tool_mode_);
+//    readData(data_pkg, "tool_analog_input0", tool_analog_input_[0]);
+//    readData(data_pkg, "tool_analog_input1", tool_analog_input_[1]);
+//    readData(data_pkg, "tool_output_voltage", tool_output_voltage_);
+//    readData(data_pkg, "tool_output_current", tool_output_current_);
+//    readData(data_pkg, "tool_temperature", tool_temperature_);
+//    readData(data_pkg, "robot_mode", robot_mode_);
+//    readData(data_pkg, "safety_mode", safety_mode_);
+//    readBitsetData<uint32_t>(data_pkg, "robot_status_bits", robot_status_bits_);
+//    readBitsetData<uint32_t>(data_pkg, "safety_status_bits", safety_status_bits_);
+//    readBitsetData<uint64_t>(data_pkg, "actual_digital_input_bits", actual_dig_in_bits_);
+//    readBitsetData<uint64_t>(data_pkg, "actual_digital_output_bits", actual_dig_out_bits_);
+//    readBitsetData<uint32_t>(data_pkg, "analog_io_types", analog_io_types_);
+//    readBitsetData<uint32_t>(data_pkg, "tool_analog_input_types", tool_analog_input_types_);
 
     // TODO logic for sending other stuff to higher level interface
 
@@ -389,41 +418,41 @@ return_type URPositionHardwareInterface::write()
        runtime_state_ == static_cast<uint32_t>(rtde::RUNTIME_STATE::PAUSING)) &&
       robot_program_running_ && (!non_blocking_read_ || packet_read_))
   {
-    RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Writing ...");
+//    RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Writing ...");
 
-    memcpy(&urcl_position_commands_[0], &position_commands_[0], 6 * sizeof(double));
-    memcpy(&urcl_velocity_commands_[0], &velocity_commands_[0], 6 * sizeof(double));
-
-    // create a lambda substract functor
-    std::function<double(double, double)> substractor = [](double a, double b) { return std::abs(a - b); };
-
-    // create a position difference vector
-    std::vector<double> pos_diff;
-    pos_diff.resize(position_commands_.size());
-    std::transform(position_commands_.begin(), position_commands_.end(), position_commands_old_.begin(),
-                   pos_diff.begin(), substractor);
-
-    // create a velocity difference vector
-    std::vector<double> vel_diff;
-    vel_diff.resize(velocity_commands_.size());
-    std::transform(velocity_commands_.begin(), velocity_commands_.end(), velocity_commands_old_.begin(),
-                   vel_diff.begin(), substractor);
-
-    double pos_diff_sum = 0.0;
-    double vel_diff_sum = 0.0;
-    std::for_each(pos_diff.begin(), pos_diff.end(), [&pos_diff_sum](double a) { return pos_diff_sum += a; });
-    std::for_each(vel_diff.begin(), vel_diff.end(), [&vel_diff_sum](double a) { return vel_diff_sum += a; });
-
-    if (pos_diff_sum != 0.0)
-    {
-      RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Position difference exists ...");
-      ur_driver_->writeJointCommand(urcl_position_commands_, urcl::comm::ControlMode::MODE_SERVOJ);
-    }
-    else if (vel_diff_sum != 0.0)
-    {
-      ur_driver_->writeJointCommand(urcl_velocity_commands_, urcl::comm::ControlMode::MODE_SPEEDJ);
-    }
-    else
+//    memcpy(&urcl_position_commands_[0], &position_commands_[0], 6 * sizeof(double));
+//    memcpy(&urcl_velocity_commands_[0], &velocity_commands_[0], 6 * sizeof(double));
+//
+//    // create a lambda substract functor
+//    std::function<double(double, double)> substractor = [](double a, double b) { return std::abs(a - b); };
+//
+//    // create a position difference vector
+//    std::vector<double> pos_diff;
+//    pos_diff.resize(position_commands_.size());
+//    std::transform(position_commands_.begin(), position_commands_.end(), position_commands_old_.begin(),
+//                   pos_diff.begin(), substractor);
+//
+//    // create a velocity difference vector
+//    std::vector<double> vel_diff;
+//    vel_diff.resize(velocity_commands_.size());
+//    std::transform(velocity_commands_.begin(), velocity_commands_.end(), velocity_commands_old_.begin(),
+//                   vel_diff.begin(), substractor);
+//
+//    double pos_diff_sum = 0.0;
+//    double vel_diff_sum = 0.0;
+//    std::for_each(pos_diff.begin(), pos_diff.end(), [&pos_diff_sum](double a) { return pos_diff_sum += a; });
+//    std::for_each(vel_diff.begin(), vel_diff.end(), [&vel_diff_sum](double a) { return vel_diff_sum += a; });
+//
+//    if (pos_diff_sum != 0.0)
+//    {
+//      RCLCPP_INFO(rclcpp::get_logger("URPositionHardwareInterface"), "Position difference exists ...");
+//      ur_driver_->writeJointCommand(urcl_position_commands_, urcl::comm::ControlMode::MODE_SERVOJ);
+//    }
+//    else if (vel_diff_sum != 0.0)
+//    {
+//      ur_driver_->writeJointCommand(urcl_velocity_commands_, urcl::comm::ControlMode::MODE_SPEEDJ);
+//    }
+//    else
     {
       ur_driver_->writeKeepalive();
     }
